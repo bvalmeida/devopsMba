@@ -33,21 +33,23 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mysql
-  namespace: app-teste
+  name: mysql 
+  namespace: app-teste 
   labels:
-    app: mysql
+    app: mysql 
 spec:
   selector:
     matchLabels:
       app: mysql
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
         app: mysql
     spec:
       containers:
-        - name: mysql
+        - name: mysql 
           image: mysql:5.6
           env:
             - name: MYSQL_ROOT_PASSWORD
@@ -62,22 +64,22 @@ spec:
             - name: mysql-pvc
               mountPath: /var/lib/mysql
       volumes:
-        - name: mysql-pvc
+        - name: mysql-pvc 
           persistentVolumeClaim:
             claimName: mysql-pvc
 ---
-apiVersion: v1
-kind: Service
+apiVersion: v1 
+kind: Service 
 metadata:
   name: wordpress
-  namespace: app-teste
+  namespace: app-teste 
   labels:
-    app: wordpress
+    app: wordpress 
 spec:
-  ports:
+  ports: 
     - port: 80
-  selector:
-    app: wordpress
+  selector: 
+    app: wordpress 
   type: LoadBalancer
 ---
 apiVersion: v1
@@ -93,24 +95,27 @@ spec:
       storage: 20Gi
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: Deployment 
 metadata:
-  name: wordpress
+  name: wordpress 
   namespace: app-teste
   labels:
-    app: wordpress
+    app: wordpress 
 spec:
   selector:
     matchLabels:
-      app: wordpress
+      app: wordpress 
+  strategy:
+    type: Recreate
   template:
-    labels:
-      app: wordpress
+    metadata:
+      labels:
+        app: wordpress
     spec:
       containers:
-        - name: wordpress
-          image: wordpress:latest
-          env:
+        - name: wordpress 
+          image: wordpress:4.8-apache
+          env: 
             - name: WORDPRESS_DB_HOST
               value: mysql.app-teste.svc.cluster.local
             - name: WORDPRESS_DB_PASSWORD
@@ -118,8 +123,27 @@ spec:
                 secretKeyRef:
                   name: mysql-pass
                   key: password
-          ports:
+          ports: 
             - name: http
               containerPort: 80
-          
-
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: 80
+          #   initialDelaySeconds: 40
+          #   periodSeconds: 5
+          #   failureThreshold: 1
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: 80
+          #   initialDelaySeconds: 40
+          #   periodSeconds: 5
+          #   failureThreshold: 1
+          volumeMounts:
+            - name: wordpress-pvc
+              mountPath: /var/www/html
+      volumes:
+        - name: wordpress-pvc 
+          persistentVolumeClaim:
+            claimName: wordpress-pvc
